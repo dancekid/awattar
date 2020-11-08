@@ -1,1 +1,354 @@
-[]
+[
+    {
+        "id": "290fae67.fd1682",
+        "type": "tab",
+        "label": "awattar",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "8bd858af.792cf8",
+        "type": "http request",
+        "z": "290fae67.fd1682",
+        "name": "",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://api.awattar.de/v1/marketdata",
+        "tls": "",
+        "persist": true,
+        "proxy": "",
+        "authType": "",
+        "x": 810,
+        "y": 320,
+        "wires": [
+            [
+                "979d3914.23fc18"
+            ]
+        ]
+    },
+    {
+        "id": "979d3914.23fc18",
+        "type": "function",
+        "z": "290fae67.fd1682",
+        "name": "Magisches Node, das ganz toll ist",
+        "func": "var heizStunden = 3;\nvar nichtHeizStunden = 3;\n\nvar time = [];\nvar price = [];\nvar pricetime = [];\n\nvar outputarr = [];\n\nvar data = 0;\n\n\ndata = msg.payload;\n\n\nif(data === 0){\n    msg.payload = message;\n    return msg;\n}\n\nif(data.data.length >= (heizStunden+nichtHeizStunden)){\n    var neutralStunden = data.data.length-(heizStunden+nichtHeizStunden);\n    \n    if(!Number.isInteger(heizStunden)) { heizStunden = 0;}\n    if(!Number.isInteger(nichtHeizStunden)) { nichtHeizStunden = 0;}\n    if((heizStunden+nichtHeizStunden)>=24) { heizStunden = 0; nichtHeizStunden = 0;}\n    \n    \n    for(i = 0; i < data.data.length; i++) {\n        time.push(data.data[i].start_timestamp);\n        price.push(data.data[i].marketprice);\n    }\n    for(i = 0; i < time.length; i++) {\n        pricetime.push([price[i], time[i]]);\n    }\n    pricetime.sort(function(a, b) {return a[0] - b[0];});\n\n    for(i = 1; i <= heizStunden; i++) {\n        outputarr.push([pricetime[i-1][0],pricetime[i-1][1], 2]);\n    }\n    for(i = heizStunden;i <= (heizStunden+neutralStunden);i++) {\n        outputarr.push([pricetime[i-1][0],pricetime[i-1][1], 0]);\n    }\n    for(i = (neutralStunden+heizStunden+1); i <= (neutralStunden+heizStunden+nichtHeizStunden); i++) {\n        outputarr.push([pricetime[i-1][0],pricetime[i-1][1], 1]);\n    }\n    outputarr[0].sort((a,b) => a[1] - b[1]);\n    msg.payload = JSON.stringify({ \"data\": outputarr});\n}else{\n    msg.payload = JSON.stringify({ \"Error\": 1});\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "// Code added here will be run when the\n// node is being stopped or re-deployed.\nmsg.payload = false;\nreturn msg;",
+        "x": 1080,
+        "y": 320,
+        "wires": [
+            [
+                "2deb2864.2ea488",
+                "306d325.eea7cce"
+            ]
+        ]
+    },
+    {
+        "id": "2deb2864.2ea488",
+        "type": "ioBroker out",
+        "z": "290fae67.fd1682",
+        "name": "array Speicher",
+        "topic": "0_userdata.0.aWATTarArray",
+        "ack": "false",
+        "autoCreate": "false",
+        "stateName": "",
+        "role": "",
+        "payloadType": "",
+        "readonly": "",
+        "stateUnit": "",
+        "stateMin": "",
+        "stateMax": "",
+        "x": 1360,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "306d325.eea7cce",
+        "type": "debug",
+        "z": "290fae67.fd1682",
+        "name": "",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1330,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "fbf41648.a2ca38",
+        "type": "inject",
+        "z": "290fae67.fd1682",
+        "name": "Inject",
+        "props": [
+            {
+                "p": "loop",
+                "v": "0",
+                "vt": "str"
+            },
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "false",
+        "payloadType": "str",
+        "x": 90,
+        "y": 340,
+        "wires": [
+            [
+                "c59f94f1.347ef8"
+            ]
+        ]
+    },
+    {
+        "id": "3c5a1e9e.3efb22",
+        "type": "ioBroker get",
+        "z": "290fae67.fd1682",
+        "name": "array Speicher",
+        "topic": "0_userdata.0.TestObjektJannik",
+        "attrname": "arr",
+        "payloadType": "value",
+        "x": 820,
+        "y": 540,
+        "wires": [
+            [
+                "a32043c5.5a5ab"
+            ]
+        ]
+    },
+    {
+        "id": "a32043c5.5a5ab",
+        "type": "function",
+        "z": "290fae67.fd1682",
+        "name": "",
+        "func": "var arr = msg.arr;\nvar now = new Date();\n\nvar arrr = [];\n\nvar Heizen = 0;\nvar nichtHeizen = 0;\nvar state = 0;\nvar g = 0;\nvar msg0 = {};\nvar msg1 = {};\n\nfor(i = 0; i < arr.length; i++) {\n    if(arr.data[i]==now){\n        state = arr.data[i][2];\n    }\n}\n\nif(state===0){\n    nichtHeizen = false;\n    heizen = false;\n}\nif(state==1){\n    nichtHeizen = true;\n    heizen = false;\n}\nif(state==2){\n    nichtHeizen = false;\n    heizen = true;\n}\n\nmsg0.payload = heizen;\nmsg1.payload = arrr;\nreturn [msg0, msg1];",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "x": 1020,
+        "y": 540,
+        "wires": [
+            [
+                "a05c7e7e.ac7ce",
+                "3c8f569b.82cfba"
+            ],
+            [
+                "db487831.2a8c88",
+                "a94e489.d5606b8"
+            ]
+        ]
+    },
+    {
+        "id": "a05c7e7e.ac7ce",
+        "type": "ioBroker out",
+        "z": "290fae67.fd1682",
+        "name": "SGReady EIN",
+        "topic": "0_userdata.0.SGReadyEIN",
+        "ack": "true",
+        "autoCreate": "false",
+        "stateName": "",
+        "role": "",
+        "payloadType": "",
+        "readonly": "",
+        "stateUnit": "",
+        "stateMin": "",
+        "stateMax": "",
+        "x": 1380,
+        "y": 500,
+        "wires": []
+    },
+    {
+        "id": "a94e489.d5606b8",
+        "type": "ioBroker out",
+        "z": "290fae67.fd1682",
+        "name": "SGReady AUS",
+        "topic": "0_userdata.0.SGReadyAUS",
+        "ack": "false",
+        "autoCreate": "false",
+        "stateName": "",
+        "role": "",
+        "payloadType": "",
+        "readonly": "",
+        "stateUnit": "",
+        "stateMin": "",
+        "stateMax": "",
+        "x": 1380,
+        "y": 600,
+        "wires": []
+    },
+    {
+        "id": "3c8f569b.82cfba",
+        "type": "debug",
+        "z": "290fae67.fd1682",
+        "name": "Heizen",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1350,
+        "y": 460,
+        "wires": []
+    },
+    {
+        "id": "db487831.2a8c88",
+        "type": "debug",
+        "z": "290fae67.fd1682",
+        "name": "",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1350,
+        "y": 660,
+        "wires": []
+    },
+    {
+        "id": "e2078b83.fe0da",
+        "type": "delay",
+        "z": "290fae67.fd1682",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "1",
+        "timeoutUnits": "hours",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 300,
+        "y": 460,
+        "wires": [
+            [
+                "c59f94f1.347ef8"
+            ]
+        ]
+    },
+    {
+        "id": "c59f94f1.347ef8",
+        "type": "function",
+        "z": "290fae67.fd1682",
+        "name": "",
+        "func": "var loop = msg.loop;\nloop++;\nmsg.loop=loop;\n\nif(loop == 1){\n    return [msg,msg];\n}\nif(loop == 24){\n    loop = 0;\n    msg.loop=loop;\n    return [null, msg];\n}\nreturn [null,msg];\n\n",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "x": 300,
+        "y": 340,
+        "wires": [
+            [
+                "8bd858af.792cf8",
+                "c763ed6e.69c88",
+                "88d89123.04a64",
+                "9fd6ba6f.4f473"
+            ],
+            [
+                "e2078b83.fe0da",
+                "dada8d7a.cec2d8"
+            ]
+        ]
+    },
+    {
+        "id": "c763ed6e.69c88",
+        "type": "ioBroker out",
+        "z": "290fae67.fd1682",
+        "name": "",
+        "topic": "0_userdata.0.SGReadyEIN",
+        "ack": "true",
+        "autoCreate": "false",
+        "stateName": "",
+        "role": "",
+        "payloadType": "",
+        "readonly": "",
+        "stateUnit": "",
+        "stateMin": "",
+        "stateMax": "",
+        "x": 600,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "88d89123.04a64",
+        "type": "ioBroker out",
+        "z": "290fae67.fd1682",
+        "name": "",
+        "topic": "0_userdata.0.SGReadyAUS",
+        "ack": "true",
+        "autoCreate": "false",
+        "stateName": "",
+        "role": "",
+        "payloadType": "",
+        "readonly": "",
+        "stateUnit": "",
+        "stateMin": "",
+        "stateMax": "",
+        "x": 600,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "dada8d7a.cec2d8",
+        "type": "delay",
+        "z": "290fae67.fd1682",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 600,
+        "y": 540,
+        "wires": [
+            [
+                "3c5a1e9e.3efb22"
+            ]
+        ]
+    },
+    {
+        "id": "9fd6ba6f.4f473",
+        "type": "ioBroker out",
+        "z": "290fae67.fd1682",
+        "name": "",
+        "topic": "0_userdata.0.aWATTarArray",
+        "ack": "true",
+        "autoCreate": "false",
+        "stateName": "",
+        "role": "",
+        "payloadType": "",
+        "readonly": "",
+        "stateUnit": "",
+        "stateMin": "",
+        "stateMax": "",
+        "x": 600,
+        "y": 240,
+        "wires": []
+    }
+]
